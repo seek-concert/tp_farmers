@@ -207,5 +207,87 @@ function getTree($pInfo, $spread = true)
     return $tree;
 }
 
+/**
+ * 整理出tree数据 ---  layui tree
+ * @param $pInfo
+ * @param bool $spread
+ * @return array
+ */
+function getTrees($pInfo, $spread = true)
+{
+
+    $res = [];
+    $tree = [];
+    //整理数组
+    foreach($pInfo as $key=>$vo){
+        if($spread){
+            $vo['spread'] = true;  //默认展开
+        }
+        $res[$vo['id']] = $vo;
+        $res[$vo['id']]['children'] = [];
+    }
+    unset($pInfo);
+
+    //查找子孙
+    foreach($res as $key=>$vo){
+         if(0 != $vo['pid']){
+            $res[$vo['pid']]['children'][$key] = &$res[$key];
+             $new_val = &$res[$key];
+             $res[$vo['pid']]['children'][$key]['names'] = $new_val['name'];
+             $res[$vo['pid']]['children'][$key]['name'] = $new_val['name'].'【产量:'.$new_val['yield'].' 销量:'.$new_val['sales'].'】';
+             sort($res[$vo['pid']]['children']);
+        }else{
+             $res[$key]['name'] = $vo['name'].'【产量:'.$vo['yield'].' 销量:'.$vo['sales'].'】';
+             $res[$key]['names'] = $vo['name'];
+         }
+    }
+
+    //过滤杂质
+    foreach( $res as $key=>$vo ){
+        if(0 == $vo['pid']){
+            $tree[] = $vo;
+        }
+    }
+
+    unset( $res );
+
+    return $tree;
+}
+
+/**
+ * Excel导入
+ * @param string $file excel文件
+ * @param int $sheet
+ * @return array 返回解析数据
+ * @throws PHPExcel_Exception
+ * @throws PHPExcel_Reader_Exception
+ */
+function importExecl($file=''){
+    // 判断文件是什么格式
+    $type = pathinfo($file);
+    $type = strtolower($type["extension"]);
+    $type=$type==='csv' ? $type : 'Excel5';
+    ini_set('max_execution_time', '0');
+    // 判断使用哪种格式
+    $objReader = PHPExcel_IOFactory::createReader($type);
+    $objPHPExcel = $objReader->load($file);
+    $sheet = $objPHPExcel->getSheet(0);
+    // 取得总行数
+    $highestRow = $sheet->getHighestRow();
+    // 取得总列数
+    $highestColumn = $sheet->getHighestColumn();
+    //循环读取excel文件,读取一条,插入一条
+    $data=array();
+    //从第二行开始读取数据
+    for($j=2;$j<=$highestRow;$j++){
+        //从A列读取数据
+        for($k='A';$k<=$highestColumn;$k++){
+            // 读取单元格
+            $data[$j][]=$objPHPExcel->getActiveSheet()->getCell("$k$j")->getValue();
+        }
+    }
+    return $data;
+}
+
 
 
