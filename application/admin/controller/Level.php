@@ -4,6 +4,8 @@
  */
 namespace app\admin\controller;
 use app\admin\model\LevelModel;
+use app\common\service\Office;
+use think\Db;
 
 class Level extends Base
 {
@@ -17,14 +19,18 @@ class Level extends Base
     public function index()
     {
         if(request()->isAjax()){
-
             $level = new LevelModel();
             $levels = $level->getLevelList();
 
             $levels = getTrees(objToArray($levels), true);
             return json(msg(1, $levels, 'ok'));
         }
-
+        $order_info = 'http://'.$_SERVER['HTTP_HOST'].'/excel/农户销售记录导入模板.xlsx';
+        $name_info = 'http://'.$_SERVER['HTTP_HOST'].'/excel/农户资料导入模板.xlsx';
+        $this->assign([
+            'order_info'=>$order_info,
+            'name_info'=>$name_info,
+        ]);
         return $this->fetch();
     }
 
@@ -35,6 +41,7 @@ class Level extends Base
     public function levelAdd()
     {
         $param = input('post.');
+        unset($param['file']);
 
         $level = new LevelModel();
         $flag = $level->insertLevel($param);
@@ -50,6 +57,7 @@ class Level extends Base
     {
         $param = input('post.');
         unset($param['file']);
+
         $level = new LevelModel();
         $flag = $level->editLevel($param);
 
@@ -73,89 +81,83 @@ class Level extends Base
      * 导入
      */
     public function excelData(){
+        //文件检测
         $file = $_FILES['file'];
         if ($file['error'] == 4){
             $this->error('请选择上传excel文件');
         }
         $file_types = explode ( ".", $file['name'] );
-        $excel_type = array('xls','csv','xlsx');
+        $excel_type = array('xlsx');
         if (!in_array(strtolower(end($file_types)),$excel_type)){
-         $this->error("不是Excel文件，请重新上传");
+         $this->error("仅xlsx格式的Excel文件，请重新上传");
         }
-//        dump($file);dump(111);
+        $parm = input('');
+        if($parm['types']&&!in_array($parm['types'],[3,4])){
+            $this->error("上传不合法！");
+        }
+        //上传
         $file = request()->file('file');
         $info = $file->move(ROOT_PATH . 'public' . DS . 'upload/excel');
         if ($info) {
-            $src = '/upload' . '/excel/' . date('Ymd') . '/' . $info->getFilename();
+            $src = 'upload' . '/excel/' . date('Ymd') . '/' . $info->getFilename();
+            $excel = new Office();
+            //读取EXCEL表数据
+            if($parm['types']==3){
+                //农户资料
+                $row = $excel->importExeclImg($src);
+                $new_arr = [];
+                unset($row[0]);
+                foreach ($row as $k=>$v){
+                    $new_arr[$k]['type_id'] = $parm['pid'];
+                    $new_arr[$k]['name'] = $v[0];
+                    $new_arr[$k]['level'] = $parm['types'];
+                    $new_arr[$k]['yield'] = $v[2];
+                    $new_arr[$k]['sales'] = $v[3];
+                    $new_arr[$k]['is_menu'] = 2;
+                    $new_arr[$k]['num'] = $v[1];
+                    $new_arr[$k]['linkurl'] = $v[4];
+                    $new_arr[$k]['imgurl'] = $v[5];
+                    $new_arr[$k]['imgurls'] = $v[6];
+                    $new_arr[$k]['sort'] = 0;
+                    $new_arr[$k]['update_time'] = time();
+                }
+                //新增数据
+                $filed_key = ['type_id','name','level','yield','sales','is_menu','num','linkurl','imgurl','imgurls','sort','update_time'];
+                $data_add = batch_update_or_insert_sql('pq_level',$filed_key,$new_arr,$filed_key);
+                if(!empty($data_add)){
+                    foreach ($data_add as $k=>$v){
+                        Db::query($v);
+                    }
+                }
+            }
+            if($parm['types']==4){
+                //农户销售记录
+                $row = $excel->importExecl($src);
+                $new_arr = [];
+                unset($row[1]);
+                foreach ($row as $k=>$v){
+                    $new_arr[$k]['l_id'] = $parm['pid'];
+                    $new_arr[$k]['buyer'] = $v['A'];
+                    $new_arr[$k]['sold_to'] = $v['C'];
+                    $new_arr[$k]['order_num'] = $v['B'];
+                    $new_arr[$k]['sales_time'] = strtotime(gmdate('Y-m-d', ($v['D'] - 25569) * 86400));
+                    $new_arr[$k]['update_time'] = time();
+                }
+                //新增数据
+                $filed_key = ['l_id','buyer','sold_to','order_num','sales_time','update_time'];
+                $data_add = batch_update_or_insert_sql('pq_sales',$filed_key,$new_arr,$filed_key);
+                if(!empty($data_add)){
+                    foreach ($data_add as $k=>$v){
+                        Db::query($v);
+                    }
+                }
+            }
+
+            return json(msg(1, '', '导入数据成功'));
         } else {
             // 上传失败获取错误信息
             return json(msg(-1, '', $file->getError()));
         }
-//        dump($file);
-//        $data = importExecl(ROOT_PATH.'/public/'.$src);
-        $excel_class = new Excels();
-        $data = $excel_class->excel_import(ROOT_PATH.'/public/'.$src);
-//        dump($data);
-//        Loader::import('PHPExcel.PHPExcel');
-//        Loader::import('PHPExcel.PHPExcel.PHPExcel_IOFactory');
-//        Loader::import('PHPExcel.PHPExcel.PHPExcel_Cell');
-//
-//        //从前台获取excel文件
-//        $file = request()->file('file');
-//
-//        //上传该文件
-//        $path = ROOT_PATH . 'public' . DS . 'imgs' . DS;
-//        $info = $file->move(ROOT_PATH . 'public' . DS . 'imgs'. DS);//上传位置
-//        if($info){
-//            echo '文件上传成功'.'<br/>';
-//        }
-//        else{
-//            echo '文件上传失败'.'<br/>';
-//        }
-//
-//        //上传后的EXCEL路径
-//        $file_path = $path . $info->getSaveName();
-//
-//        //设置一个存放图片的路径
-//        $imgPath = ROOT_PATH . 'public' . DS . 'imgs'. DS;
-//        if(!file_exists($imgPath)){
-//            mkdir($imgPath);
-//        }
-//
-//        //获取文件后缀：xls、xlsx等
-//        $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION) );
-//        //加上这个判断的目的就是防止报错，但目前只支持Excel5
-//        if($extension =='xls'){
-//            $objReader = \PHPExcel_IOFactory::createReader('Excel5');
-//        }else{
-//            $objReader = \PHPExcel_IOFactory::createReader('excel2007');
-//        }
-//
-//        //载入文件
-//        $filenames=[];
-//        $objPHPExcel = $objReader->load($file_path);
-//        foreach ($objPHPExcel->getSheet(0)->getDrawingCollection() as $k => $drawing) {
-//            $codata = $drawing->getCoordinates(); //得到单元数据 比如G2单元
-//            $filename = $drawing->getIndexedFilename();  //文件名
-//
-//            //如果多张图片，就存入数组
-//            $filenames[]=$imgPath.'123'.$filename;
-//            echo $filename."<br/>";
-//            ob_start();
-//            call_user_func(
-//                $drawing->getRenderingFunction(),
-//                $drawing->getImageResource()
-//            );
-//            $imageContents = ob_get_contents();
-//            file_put_contents($imgPath.'123'.$filename,$imageContents); //把图片保存到本地（上方自定义的路径）
-//            ob_end_clean();
-//            dump(123323121);
-//            dump($imgPath.'123'.$filename,$imageContents);
-//        }
-//        print_r($filenames);
-//        die;
-
-die;
     }
 
 

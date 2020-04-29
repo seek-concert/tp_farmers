@@ -19,7 +19,7 @@ class LevelModel extends Model
      */
     public function getLevelList()
     {
-        return $this->field('id,type_id pid,level,name,yield,sales,is_menu,num,sold_to,order_num,buyer,linkurl,imgurl,sort')->order('sort asc,id desc')->select();
+        return $this->field('id,type_id pid,level,name,yield,sales,is_menu,num,linkurl,imgurl,imgurls,sort')->order('sort asc,id desc')->select();
     }
 
     /**

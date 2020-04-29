@@ -99,7 +99,7 @@
         </div>
         <div class="form-group a_push">
             <label class="col-sm-3 control-label">文件图：</label>
-            <input name="imgurl[]" id="imgs" type="hidden"/>
+            <input name="imgurl" id="imgs" type="hidden"/>
             <div class="form-inline">
                 <div class="input-group col-sm-9">
                     <button type="button" class="layui-btn" id="test1">
@@ -109,6 +109,21 @@
                 <div class="input-group col-sm-9" style="padding-top: 5px;">
                     <label class="col-sm-8 control-label"></label>
                     <div id="sms"></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group a_push">
+            <label class="col-sm-3 control-label">文件图2：</label>
+            <input name="imgurls" id="img1" type="hidden"/>
+            <div class="form-inline">
+                <div class="input-group col-sm-9">
+                    <button type="button" class="layui-btn" id="test3">
+                        <i class="layui-icon">&#xe67c;</i>上传图片
+                    </button>
+                </div>
+                <div class="input-group col-sm-9" style="padding-top: 5px;">
+                    <label class="col-sm-8 control-label"></label>
+                    <div id="sms1"></div>
                 </div>
             </div>
         </div>
@@ -178,7 +193,7 @@
         </div>
         <div class="form-group e_push">
             <label class="col-sm-3 control-label">文件图：</label>
-            <input name="imgurl[]" id="img" type="hidden"/>
+            <input name="imgurl" id="img" type="hidden"/>
             <div class="form-inline">
                 <div class="input-group col-sm-9">
                     <button type="button" class="layui-btn" id="test2">
@@ -188,6 +203,21 @@
                 <div class="input-group col-sm-9" style="padding-top: 5px;">
                     <label class="col-sm-8 control-label"></label>
                     <div id="sm"></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group e_push">
+            <label class="col-sm-3 control-label">文件图2：</label>
+            <input name="imgurls" id="img2" type="hidden"/>
+            <div class="form-inline">
+                <div class="input-group col-sm-9">
+                    <button type="button" class="layui-btn" id="test4">
+                        <i class="layui-icon">&#xe67c;</i>上传图片
+                    </button>
+                </div>
+                <div class="input-group col-sm-9" style="padding-top: 5px;">
+                    <label class="col-sm-8 control-label"></label>
+                    <div id="sm2"></div>
                 </div>
             </div>
         </div>
@@ -245,11 +275,11 @@
 <div class="ibox-content" id="excel_box" style="display: none">
     <div class="form-horizontal m-t">
         <div class="form-group" style="text-align: center">
-            <button class="btn btn-outline btn-success" type="button" id="excel">
+            <button class="btn btn-outline btn-success" type="button" id="excel" onclick="location.href='{$name_info}';return;">
                 <i class="fa fa-download"></i>
                 下载农户资料导入模板
             </button><br/><br/>
-            <button class="btn btn-outline btn-success" type="button" id="excels">
+            <button class="btn btn-outline btn-success" type="button" id="excels" onclick="location.href='{$order_info}';return;">
                 <i class="fa fa-download"></i>
                 下载农户销售记录导入模板
             </button>
@@ -266,18 +296,25 @@
 <script src="__JS__/layui/layui.js"></script>
 <script src="__JS__/jquery.form.js"></script>
 <script type="text/javascript">
+
     layui.use(['layer','upload'], function(){
         var upload = layui.upload;
         var layer = layui.layer;
-
-        //执行实例--图片上传
+        //执行实例--EXCEL上传
         var uploadInst = upload.render({
             elem: '#excelLevel' //绑定元素
-            ,url: "{:url('level/exceldata')}" //上传接口
+            ,url: "{:url('Level/excelData')}" //上传接口
+            ,before: function(obj){
+                var datas= $('#excelLevel').attr('data-level');
+                var _id= $('#excelLevel').attr('data-id');
+                this.data={'types':datas,'pid':_id};
+            }
             ,accept:'file'
             ,done: function(res){
-              console.log(res);
               layer.alert(res.msg);
+              if(res.code==1){
+                  location.reload();
+              }
             }
             ,error: function(){
                 //请求异常回调
@@ -286,29 +323,60 @@
     });
 </script>
 <script type="text/javascript">
+    //添加图片1
+    layui.use(['layer','upload'], function(){
+        var upload = layui.upload;
+        var layer = layui.layer;
+        //执行实例--图片上传
+        var uploadInst = upload.render({
+            elem: '#test1' //绑定元素
+            ,url: "{:url('Tool/uploadImg')}" //上传接口
+            ,done: function(res){
+                //上传完毕回调
+                $("#imgs").val(res.data.src);
+                $("#sms").html('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
+            }
+            ,error: function(){
+                //请求异常回调
+            }
+        });
+    });
+</script>
+<script type="text/javascript">
+    //添加图片2
     layui.use(['layer','upload'], function(){
         var upload = layui.upload;
         var layer = layui.layer;
 
         //执行实例--图片上传
         var uploadInst = upload.render({
-            elem: '#test1' //绑定元素
+            elem: '#test3' //绑定元素
             ,url: "{:url('Tool/uploadImg')}" //上传接口
             ,done: function(res){
-                var img_lenth = $('#sms>img').length;
-                if(img_lenth===2||img_lenth>2){
-                    layer.alert('文件上传达到上限');
-                    return false;
-                }
                 //上传完毕回调
-                var img =  $("#imgs").val();
-                if(img){
-                    $("#imgs").val(img+','+res.data.src);
-                }else{
-                    $("#imgs").val(res.data.src);
-                }
+                $("#img1").val(res.data.src);
+                $("#sms1").html('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
+            }
+            ,error: function(){
+                //请求异常回调
+            }
+        });
+    });
+</script>
+<script type="text/javascript">
+    //编辑图片2
+    layui.use(['layer','upload'], function(){
+        var upload = layui.upload;
+        var layer = layui.layer;
 
-                $("#sms").append('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
+        //执行实例--图片上传
+        var uploadInst = upload.render({
+            elem: '#test4' //绑定元素
+            ,url: "{:url('Tool/uploadImg')}" //上传接口
+            ,done: function(res){
+                //上传完毕回调
+                $("#img2").val(res.data.src);
+                $("#sm2").html('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
             }
             ,error: function(){
                 //请求异常回调
@@ -361,7 +429,7 @@ $(function(){
         $('#show_pid').val(nowLevel.names);
         $('#pid').val(nowLevel.id);
         $('#level').val(nowLevel.level+1);
-        console.log(nowLevel.level);
+
         if(2 == nowLevel.level){
             $(".a_push").show();
             $("#num").attr('name','num');
@@ -370,6 +438,7 @@ $(function(){
             $("#buyer").attr('name','buyer');
             $("#linkurl").attr('name','linkurl');
             $("#imgs").attr('name','imgurl');
+            $("#img1").attr('name','imgurls');
         }else{
             $(".a_push").hide();
             $("#num").attr('name','');
@@ -378,6 +447,7 @@ $(function(){
             $("#buyer").attr('name','');
             $("#linkurl").attr('name','');
             $("#imgs").attr('name','');
+            $("#img1").attr('name','');
         }
         layui.use('layer', function(){
             box = layer.open({
@@ -406,12 +476,9 @@ $(function(){
         $("#e_linkurl").val(nowLevel.linkurl);
         //图片
         $("#img").val(nowLevel.imgurl);
-        var arr = nowLevel.imgurl.split(',');
-        var _html = '';
-        for(var i in arr){
-            _html += '<img src="' + arr[i]+ '" style="width:150px;height: 150px;"/>';
-        }
-        $("#sm").html(_html);
+        $("#sm").html('<img src="' + nowLevel.imgurl+ '" style="width:150px;height: 150px;"/>');
+        $("#img2").val(nowLevel.imgurls);
+        $("#sm2").html('<img src="' + nowLevel.imgurls+ '" style="width:150px;height: 150px;"/>');
         //下拉
         var _option1 = '<option value="1" selected>否</option><option value="2">是</option>';
         var _option2 = '<option value="1">否</option><option value="2" selected>是</option>';
@@ -429,6 +496,7 @@ $(function(){
             $("#e_buyer").attr('name','buyer');
             $("#e_linkurl").attr('name','linkurl');
             $("#img").attr('name','imgurl');
+            $("#img2").attr('name','imgurls');
         }else{
             $(".e_push").hide();
             $("#e_num").attr('name','');
@@ -437,6 +505,7 @@ $(function(){
             $("#e_buyer").attr('name','');
             $("#e_linkurl").attr('name','');
             $("#img").attr('name','');
+            $("#img2").attr('name','');
         }
 
         layui.use(['layer','upload'], function(){
@@ -451,31 +520,19 @@ $(function(){
 
             var upload = layui.upload;
             var layers = layui.layer;
-            //执行实例--图片上传
+            //执行实例--图片上传  编辑1
             var uploadInsts = upload.render({
                 elem: '#test2' //绑定元素
                 ,url: "{:url('Tool/uploadImg')}" //上传接口
                 ,done: function(res){
-                    var img_lenth = $('#sm>img').length;
-                    if(img_lenth===2||img_lenth>2){
-                        layers.alert('文件上传达到上限');
-                        return false;
-                    }
                     //上传完毕回调
-                    var img =  $("#img").val();
-                    if(img){
-                        $("#img").val(img+','+res.data.src);
-                    }else{
-                        $("#img").val(res.data.src);
-                    }
-                    $("#sm").append('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
+                    $("#img").val(res.data.src);
+                    $("#sm").html('<img src="' + res.data.src + '" style="width:150px;height: 150px;"/>');
                 }
                 ,error: function(){
                     //请求异常回调
                 }
             });
-
-
 
         });
 
@@ -565,11 +622,14 @@ function getTree(){
                     }else{
                         $('#excelLevel').hide();
                     }
+                    //设置导入入口
                     if(2 == level.level) {
                         $('#excelLevel').attr('data-level','3');
+                        $('#excelLevel').attr('data-id',level.id);
                     }
                     if(3 == level.level) {
                         $('#excelLevel').attr('data-level','4');
+                        $('#excelLevel').attr('data-id',level.id);
                     }
                 }
             });
