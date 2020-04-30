@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>农户销售查询系统-树状图</title>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/common.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        .bg{background-color: white;}
+        @media screen and (min-width:1200px){
+            .f_30{font-size: 30px;}
+            .p_20{padding-top: 20px;}
+        }/* 大型设备（大台式电脑，1200px 起） */
+
+        @media screen and (min-width:992px){
+            .f_30{font-size: 30px;}
+            .p_20{padding-top: 20px;}
+        }/* 中型设备（台式电脑，992px 起） */
+
+        @media screen and (min-width:768px) {
+            .f_30{font-size: 50px;}
+            .p_20{padding-top: 20px;}
+        } /* 小型设备（平板电脑，768px 起） */
+
+        @media screen and (min-width:480px){
+            .f_30{font-size: 35px;}
+            .p_20{padding-top: 20px;}
+        }/* 超小设备（手机，小于 768px） */
+        @media screen and (max-width:480px){
+            .f_30{font-size: 30px;}
+            .p_20{padding-top: 20px;}
+        }/* 超小设备（手机，小于 480px） */
+
+    </style>
+</head>
+<body class="bg">
+<div class="container">
+    <div class="row p_20">
+        <div class="title"></div>
+        <div class=" col-lg-4 col-md-3 col-sm-2 col-xs-1"></div>
+        <div class=" col-lg-4 col-md-6 col-sm-8 col-xs-10 text-center f_30 ">农户销售查询系统</div>
+        <div class=" col-lg-4 col-md-3 col-sm-2 col-xs-1"></div>
+    </div>
+</div>
+<div id="relevanceRuleConfig" style="padding-left: 10px;">
+</div>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/common.js"></script>
+<script>
+    var width = 1200,
+        height = 1000;
+    //定义布局范围
+    var treeWidth = width;
+    var treeHeight = height;
+    //定义D3树布局范围
+    var tree = d3.layout.tree()
+        .size([treeHeight, treeWidth-100])//注意D3布局跟svg坐标系无关,size(高，宽)
+        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2); });//设置相隔节点的间距，a、b节点相隔
+
+    //定义连线生成器
+    var diagonal = d3.svg.diagonal()
+        .projection(function(d) { return [d.y, d.x]; });//设置连线点的变换器
+
+    //绘制svg图形
+    var svg = d3.select("#relevanceRuleConfig").append("svg")
+        .attr("width", treeWidth)
+        .attr("height", treeHeight)
+        .append("g")
+        .attr("transform", "translate(40,0)");//定义偏移量
+
+
+    //加载数据
+    d3.json("/js/data.json", function(error, root) {
+        var nodes = tree.nodes(root);	//获取所有节点信息
+        var links = tree.links(nodes);	//获取节点的连线信息集合
+
+        //绘制连线
+        var link = svg.selectAll(".link")
+            .data(links)
+            .enter()
+            .append("path")
+            .attr("class", "link")
+            .attr("d", diagonal);
+
+        //绘制节点
+        var node = svg.selectAll(".node")
+            .data(nodes)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+        //添加节点图标
+        node.append("circle")
+            .attr("r", 4.5);
+
+        //添加节点显示文本
+        node.append("text")
+            .attr("dx", function(d) { if(d.depth===0){return 240;}else{return d.children ? -8 : 8;} })//定义文本显示x轴偏移量
+            .attr("dy", 3)//定义文本显示y轴偏移量
+            .style("text-anchor", function(d) { return d.children ? "end" : "start"; })//文字对齐显示
+            .text(function(d) { return d.name; });
+    });
+    $('svg').attr('width','2400');
+</script>
+</body>
+</html>
